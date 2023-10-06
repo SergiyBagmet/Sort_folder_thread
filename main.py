@@ -1,13 +1,16 @@
-from pathlib import Path
-import concurrent.futures
 import argparse
-from replase_file import  FileMover
-from rename import TextNormalizer
+import concurrent.futures
+from pathlib import Path
+
+
+from replase_file import FileMover
+from rename import TextNormalizer 
 
 
 """
 --source [-s] 
 --output [-o] default folder = dist
+--mode [-m] modification = category(default) or ext
 """
 
 parser = argparse.ArgumentParser(description="Sorting folder")
@@ -75,3 +78,4 @@ if __name__ == "__main__":
     pool = get_pool.mode_pool()
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.map(file_worker, pool.keys(), pool.values())
+        
