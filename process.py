@@ -2,31 +2,39 @@ from multiprocessing import Pool, cpu_count
 import time
 
 
-def factorize(number):
+
+def work_process(num):
     res = [1]
-    for i in range(2, number):
-        if not number % i:
+    for i in range(2, num):
+        if not num % i:
             res.append(i)
-    return res + [number]      
+    return res + [num]      
 
 def callback(result):
     return result
 
-if __name__ == "__main__":
-    start_time = time.time()  # Засекаем начальное время
-    
+
+
+
+def factorize(*numbers):
     with Pool(cpu_count()) as p:
         results = p.map_async(
-            factorize,
-            [128, 255, 99999, 10651060],
+            work_process,
+            numbers,
             callback=callback,
         )
         p.close()  # перестати виділяти процеси в пулл
         p.join()  # дочекатися закінчення всіх процесів
+        
+    return results.get()    
+    
+if __name__ == "__main__":
+    start_time = time.time()  # Засекаем начальное время
+    
+    a, b, c, d  = factorize(128, 255, 99999, 10651060)
     
     end_time = time.time()  # Засекаем конечное время
 
-    a, b, c, d  = results.get()
     assert a == [1, 2, 4, 8, 16, 32, 64, 128]
     assert b == [1, 3, 5, 15, 17, 51, 85, 255]
     assert c == [1, 3, 9, 41, 123, 271, 369, 813, 2439, 11111, 33333, 99999]
