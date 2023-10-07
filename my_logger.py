@@ -14,6 +14,9 @@ class MyLogger:
     - add_file_handler(log_file): Adds a file handler for logging to a file.
     - get_logger(): Returns the logger object for usage.
 
+    default format:
+        logging.Formatter('[%(levelname)s] %(asctime)s: %(name)s %(module)s %(funcName)s:%(lineno)d - "%(message)s"')
+        
     Example usage:
     ```
     logger = MyLogger().get_logger()
@@ -47,6 +50,5 @@ class MyLogger:
         return self.logger
     
 if __name__ == "__main__":
-    logger = MyLogger().get_logger()
-    logger.info("starting app")
+    pass
     
