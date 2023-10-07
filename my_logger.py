@@ -1,6 +1,26 @@
 import logging
 
 class MyLogger:
+    """
+    A class for configuring and using logging in Python.
+
+    Args:
+    - name (str): The logger's name (default is 'my_logger').
+    - log_level (int): The logging level (default is logging.DEBUG).
+    - log_file (str | None): The path to a log file (default is None, meaning no file logging).
+
+    Methods:
+    - set_log_level(log_level): Sets the logging level for the logger.
+    - add_file_handler(log_file): Adds a file handler for logging to a file.
+    - get_logger(): Returns the logger object for usage.
+
+    Example usage:
+    ```
+    logger = MyLogger().get_logger()
+    logger.info("This is an informational message")
+    logger.error("This is an error message")
+    ```
+    """
     def __init__(self, name: str='my_logger', log_level: int=logging.DEBUG, log_file: str | None=None):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(log_level)
