@@ -1,5 +1,5 @@
 import argparse
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Thread
 
@@ -101,7 +101,7 @@ def sort_thread_pool_executor(source: Path, output: Path, mode: str):
     
     list_arg_path = get_data_folder(source)
     sort_worker = SortWorker(output, mode)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         executor.map(sort_worker, list_arg_path)
         
     logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")    
@@ -118,10 +118,8 @@ def sort_simple_thread(source: Path, output: Path, mode: str):
     [th.join() for th in threads]    
     logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")  
     
-def sort_(source: Path, output: Path, mode: str):
-    pass
 
 if __name__ == "__main__":
-    # sort_thread_pool_executor(source, output, mode)
-    sort_simple_thread(source, output, mode)
+    sort_thread_pool_executor(source, output, mode)
+    # sort_simple_thread(source, output, mode)
         
