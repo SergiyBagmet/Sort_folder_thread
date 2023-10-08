@@ -2,6 +2,7 @@ import argparse
 import concurrent.futures
 from pathlib import Path
 import time
+from threading import Thread
 from functools import wraps
 
 from file_mover import FileMover
@@ -104,7 +105,7 @@ class SortWorker:
         file.rename_from(TextNormalizer.normalize)        
 
 @timing_decorator
-def sort_tread_pool_executor(source: Path, output: Path, mode: str):
+def sort_thread_pool_executor(source: Path, output: Path, mode: str):
     
     list_arg_path = get_data_folder(source)
     sort_worker = SortWorker(output, mode)
@@ -113,13 +114,21 @@ def sort_tread_pool_executor(source: Path, output: Path, mode: str):
         
     logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")    
 
-def sort_(source: Path, output: Path, mode: str):
-    pass
-
+@timing_decorator
+def sort_simple_thread(source: Path, output: Path, mode: str):
+    list_arg_path = get_data_folder(source)
+    
+    sort_worker = SortWorker(output, mode)
+    for arg_path in get_data_folder(source):
+        th = Thread(target=sort_worker, args=(arg_path, ))
+        th.start()
+        th.join()
+    logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")  
+    
 def sort_(source: Path, output: Path, mode: str):
     pass
 
 if __name__ == "__main__":
-    sort_tread_pool_executor(source, output, mode)
-    
+    # sort_thread_pool_executor(source, output, mode)
+    sort_simple_thread(source, output, mode)
         
