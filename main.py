@@ -1,8 +1,8 @@
 import argparse
 import concurrent.futures
 from pathlib import Path
-from typing import Any
-
+import time
+from functools import wraps
 
 from file_mover import FileMover
 from rename import TextNormalizer 
@@ -25,6 +25,17 @@ args = vars(parser.parse_args())
 source = Path(args.get("source"))
 output = Path(args.get("output"))
 mode = args.get("mode")
+
+
+def timing_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        logger.info(f"Execution time for {func.__name__}: {elapsed_time:.2f} seconds")
+    return wrapper
 
 def get_data_folder(path: Path, data=None) -> list[Path]:
         if data is None : data = []
@@ -81,7 +92,7 @@ class SortWorker:
         self.output = output
         self.mode = mode
         
-    def __call__(self, source_path: Path) -> Any:
+    def __call__(self, source_path: Path) -> None:
         file = FileMover(source_path)
         modeificator = PathModifier(source_path, self.output)
         destination_path = modeificator.get_mode_path(self.mode)
@@ -92,14 +103,22 @@ class SortWorker:
         
         file.rename_from(TextNormalizer.normalize)        
 
-
+@timing_decorator
 def sort_tread_pool_executor(source: Path, output: Path, mode: str):
+    
     list_arg_path = get_data_folder(source)
     sort_worker = SortWorker(output, mode)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.map(sort_worker, list_arg_path)
-    logger.info(f"finish sorted dir whit mode '{mode}' \n{source.absolute()} >>> {output.absolute()}")    
         
+    logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")    
+
+def sort_(source: Path, output: Path, mode: str):
+    pass
+
+def sort_(source: Path, output: Path, mode: str):
+    pass
+
 if __name__ == "__main__":
     sort_tread_pool_executor(source, output, mode)
     
