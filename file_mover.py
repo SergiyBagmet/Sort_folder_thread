@@ -54,7 +54,9 @@ class FileMover:
             logger.error(f"Failed to unpack the archive: {self.source_path.name}")
         except shutil.ReadError:
             logger.error(f"Archive - {self.source_path.stem} not unpacked\tunknown extension({self.source_path.suffix})")
-            
+        except OSError as e:
+            logger.error(f"Error while extracting: {e}")
+           
     def rename_from(self, func_normalize: t.Callable):
         if self.source_path.is_dir():
             new_name = func_normalize(self.source_path.name)  

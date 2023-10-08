@@ -1,11 +1,13 @@
 import argparse
 import concurrent.futures
 from pathlib import Path
+from typing import Any
 
 
-from replase_file import FileMover
+from file_mover import FileMover
 from rename import TextNormalizer 
-
+from my_logger import MyLogger
+logger = MyLogger("sort").get_logger()
 
 """
 --source [-s] 
@@ -24,31 +26,34 @@ source = Path(args.get("source"))
 output = Path(args.get("output"))
 mode = args.get("mode")
 
-class GetPool:
-    def __init__(self, source: Path, output: Path, mode: str) -> None:
-        self.file_list = self.__get_data_folder(source)
-        self.output = output
-        self.mode = mode
-        self.ext_form = {
+def get_data_folder(path: Path, data=None) -> list[Path]:
+        if data is None : data = []
+        for item in path.iterdir():
+            if item.is_file():
+                data.append(item)
+            elif item.is_dir():
+                get_data_folder(item, data)
+        return data
+
+class PathModifier:
+    
+    EXT_FORM = {
             'images': ['.jpeg', '.png', '.jpg', '.svg', '.bmp', '.PNG'],
             'video': ['.avi', '.mp4', '.mov', '.mkv'],
             'documents': ['.doc', '.docx', '.txt', '.pdf', '.xlsx', '.pptx'],
             'audio': ['.mp3', '.ogg', '.wav', '.amr'],
             'archives': ['.zip', '.gz', '.tar'],
         }
-        
-    def __get_data_folder(self, path: Path, data=None) -> list[Path]:
-        if data is None : data = []
-        for item in path.iterdir():
-            if item.is_file():
-                data.append(item)
-            elif item.is_dir():
-                self.__get_data_folder(item, data)
-        return data
     
-    def __get_dir_name(self, path: Path) -> str:
+    def __init__(self, source: Path, target_dir: Path) -> None:
+        self.source = source
+        self.categoty = self.__get_category(source)
+        self.target_dir = target_dir
+        self.mode = mode
+        
+    def __get_category(self, path: Path) -> str:
         name_dir = ""
-        for key, val in self.ext_form.items():
+        for key, val in self.EXT_FORM.items():
             if path.suffix in val:
                 name_dir = key
                 break
@@ -56,26 +61,46 @@ class GetPool:
             name_dir = "others"
         return name_dir
     
-    def mode_pool(self) -> dict[Path, Path]:
-        match self.mode:
-            case "category":
-                return {f_path: self.output / self.__get_dir_name(f_path) for f_path in self.file_list}
-            case "ext":
-                return {f_path: self.output / f_path.suffix[1:].upper() for f_path in self.file_list}
-            case _:
-                raise KeyError("Unknowan modification for get pool")
+    def get_mode_path(self, mode: str) -> Path:
+        if self.categoty == 'archives':
+            return self.target_dir / self.categoty / self.source.stem
+        else:
+            match mode:
+                case 'category':  
+                    return self.target_dir / self.categoty 
+                case 'ext':
+                    return self.target_dir / self.source.suffix[1:].upper() 
+                case 'hard':
+                    return self.target_dir / self.categoty / self.source.suffix[1:].upper() 
+                case _:
+                    raise KeyError("Unknowan modification")
         
             
-def file_worker(source_path: Path, destination_path: Path):
-    file = FileMover(source_path, rename=TextNormalizer.normalize)
-    if not file.is_archive:
-        file.copy_to(destination_path)
-    else:
-        file.extract_to(destination_path)        
+class SortWorker:
+    def __init__(self, output: Path, mode: str) -> None:
+        self.output = output
+        self.mode = mode
+        
+    def __call__(self, source_path: Path) -> Any:
+        file = FileMover(source_path)
+        modeificator = PathModifier(source_path, self.output)
+        destination_path = modeificator.get_mode_path(self.mode)
+        if modeificator.categoty == 'archives':
+            file.extract_to(destination_path)
+        else:
+            file.copy_to(destination_path)
+        
+        file.rename_from(TextNormalizer.normalize)        
 
-if __name__ == "__main__":
-    get_pool = GetPool(source, output, mode)
-    pool = get_pool.mode_pool()
+
+def sort_tread_pool_executor(source: Path, output: Path, mode: str):
+    list_arg_path = get_data_folder(source)
+    sort_worker = SortWorker(output, mode)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        executor.map(file_worker, pool.keys(), pool.values())
+        executor.map(sort_worker, list_arg_path)
+    logger.info(f"finish sorted dir whit mode '{mode}' \n{source.absolute()} >>> {output.absolute()}")    
+        
+if __name__ == "__main__":
+    sort_tread_pool_executor(source, output, mode)
+    
         
