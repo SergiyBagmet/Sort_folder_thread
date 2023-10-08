@@ -9,21 +9,22 @@ logger = MyLogger("file_mover").get_logger()
 class FileMover:
     def __init__(self, source_path: Path) -> None:
         self.source_path = source_path
-        self.is_archive = True if source_path.suffix in ['.zip', '.gz', '.tar', '.rar', '.7z', '.tgz', '.tbz2', '.zipx', '.txz'] else False
     
     @property
     def source_path(self) -> Path:
-        return self._source_path
+        return Path(self._source_path)
     
     @source_path.setter
     def source_path(self, source_path: Path) -> None:
         self.path_exists(source_path)
         self._source_path = source_path
 
+
     def path_exists(self, source_path: Path) -> bool:
-        if not source_path.exists():
-            logger.error(f"Not exists path: {source_path}")
-            raise FileNotFoundError(f"{source_path} not exists.")
+        if isinstance(source_path, Path):
+            if not source_path.exists():
+                logger.error(f"Not exists path: {source_path}")
+                raise FileNotFoundError(f"{source_path} not exists.")
         
     def replace_to(self, destination_path : Path) -> Path:
         destination_path.mkdir(exist_ok=True, parents=True)  # создаем новую папку если такой нет

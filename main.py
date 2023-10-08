@@ -1,12 +1,12 @@
 import argparse
 import concurrent.futures
 from pathlib import Path
-import time
 from threading import Thread
-from functools import wraps
+
 
 from file_mover import FileMover
 from rename import TextNormalizer 
+from my_time import timing_decorator
 from my_logger import MyLogger
 logger = MyLogger("sort").get_logger()
 
@@ -28,15 +28,7 @@ output = Path(args.get("output"))
 mode = args.get("mode")
 
 
-def timing_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        func(*args, **kwargs)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        logger.info(f"Execution time for {func.__name__}: {elapsed_time:.2f} seconds")
-    return wrapper
+
 
 def get_data_folder(path: Path, data=None) -> list[Path]:
         if data is None : data = []
@@ -117,12 +109,13 @@ def sort_thread_pool_executor(source: Path, output: Path, mode: str):
 @timing_decorator
 def sort_simple_thread(source: Path, output: Path, mode: str):
     list_arg_path = get_data_folder(source)
-    
+    threads = []
     sort_worker = SortWorker(output, mode)
-    for arg_path in get_data_folder(source):
+    for arg_path in list_arg_path:
         th = Thread(target=sort_worker, args=(arg_path, ))
         th.start()
-        th.join()
+        threads.append(th)
+    [th.join() for th in threads]    
     logger.info(f"finish sorted dir whit mode '{mode}' - {source} >>> {output}")  
     
 def sort_(source: Path, output: Path, mode: str):
